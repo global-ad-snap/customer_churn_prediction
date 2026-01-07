@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Trained models (binary)
+models/*.pkl
+
+
+# Data (raw & processed)
+data/
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Environment files
+.env
+.env.*
+
