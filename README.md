@@ -15,6 +15,21 @@ The project is designed as a client-ready portfolio case, emphasizing business i
 
 ---
 
+## Key Findings
+
+**Model Performance**: Class-weighted Logistic Regression achieves 74% recall on churners with 0.84 ROC-AUC, enabling proactive identification of ~3 in 4 at-risk customers before they exit.
+
+**Primary Churn Drivers**: 
+- **Product complexity**: Customers holding 3-4 products with low engagement
+- **Lifecycle stage**: Older customers and longer tenure segments
+- **Behavioral disengagement**: Inactive members churn at 2-3x higher rates
+
+**Business Impact**: Risk-based customer prioritization enables retention teams to focus resources on the highest-risk segments, reducing wasted incentive spend while improving retention outcomes.
+
+**Why This Approach Works**: By combining interpretable models with SHAP explanations, the system provides actionable insights that retention teams can operationalize immediately—while meeting regulatory explainability requirements for financial services.
+
+---
+
 ## Business Context
 
 Customer churn—customers closing accounts or discontinuing their relationship—represents a major revenue and continuity risk for retail banks. Customer acquisition costs are high, while long-term profitability depends on retention, cross-selling, and customer lifetime value.
@@ -106,6 +121,18 @@ All features were engineered using a leakage-safe pipeline.
 
 ---
 
+## Feature Engineering Details
+
+| Original Feature | Engineered Feature | Business Rationale |
+|-----------------|-------------------|-------------------|
+| Age | AgeGroup (Young/Mid/Senior) | Lifecycle stage risk patterns |
+| Balance | HasBalance (Binary) | Zero-balance = disengagement signal |
+| NumOfProducts | HighProductCount (3+) | Complexity → dissatisfaction risk |
+| IsActiveMember + NumOfProducts | InactiveHighProducts | Interaction effect: disengaged multi-product holders |
+| CreditScore | CreditScoreGroup | Interpretability for stakeholders |
+
+---
+
 ## Modeling Strategy
 
 - Stratified train–test split  
@@ -123,7 +150,6 @@ All features were engineered using a leakage-safe pipeline.
 
 ---
 
-
 ## Model Performance (Test Set)
 
 | Model                                | ROC-AUC | Recall (Churn) | Precision (Churn) | F1    |
@@ -135,11 +161,15 @@ All features were engineered using a leakage-safe pipeline.
 
 **Final model selected:** **Class-Weighted Logistic Regression**
 
-**Rationale:**
+**Model Selection Rationale**:
 
-* Maximizes recall for churners (primary business objective)
-* Strong discrimination ability (ROC-AUC)
-* Stable, interpretable, and regulator-friendly
+All models show strong discrimination (ROC-AUC 0.83-0.85), but differ in recall-precision trade-offs:
+
+- **Logistic Regression (Class-Weighted)**: Highest recall (74%) aligns with business priority of catching churners
+- **Random Forest (Class-Weighted)**: Highest precision (77%) but misses more churners (43% recall)
+- **SMOTE variants**: Balanced performance but lower recall than class-weighted logistic regression
+
+For retention programs where missing a churner is costlier than a false alarm, **Class-Weighted Logistic Regression** is optimal.
 
 ---
 
@@ -182,14 +212,43 @@ In a real deployment, this system would:
 The model is suitable for **regulated operational environments**.
 
 ---
+## Operational Deployment Considerations
 
-## Limitations & Future Work
+**Scoring Frequency**: Monthly batch scoring recommended to balance resource costs and early intervention timing
 
-**Limitations:**
+**Risk Segmentation Strategy**:
+- **High Risk (Top 10%)**: Personal outreach + retention offers
+- **Medium Risk (10-25%)**: Automated engagement campaigns
+- **Low Risk (Bottom 75%)**: Standard service maintenance
 
-* Snapshot-based data (no temporal modeling)
-* No causal measurement of retention actions
-* External market factors not included
+**Monitoring Requirements**:
+- Model performance drift (quarterly revalidation)
+- Feature distribution shifts (monthly)
+- Actual churn rate vs predicted (ongoing)
+
+**Regulatory Compliance**:
+- Model cards documenting training data, features, and performance
+- Explainability reports for individual predictions (SHAP)
+- Bias monitoring across protected demographics
+
+---
+
+## Limitations & Assumptions
+
+**Data Limitations**:
+- **Snapshot data**: No temporal sequence modeling (e.g., declining balance trends)
+- **No external factors**: Economic conditions, competitor actions not captured
+- **Survival bias**: Only includes customers who reached the observation window
+
+**Modeling Assumptions**:
+- Churn drivers are stable over time (requires monitoring)
+- Feature relationships are linear (sufficient for logistic regression)
+- Class imbalance handling doesn't introduce synthetic noise (SMOTE validation performed)
+
+**Operational Constraints**:
+- No causal measurement of retention intervention effectiveness
+- Model provides risk scores, not guaranteed outcomes
+- Requires human judgment for final retention decisions
 
 **Next steps:**
 
